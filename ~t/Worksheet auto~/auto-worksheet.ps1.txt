@@ -1,0 +1,115 @@
+#requires -version 2
+<#
+.SYNOPSIS
+  <Overview of script>
+
+.DESCRIPTION
+  <Brief description of script>
+
+.PARAMETER <Parameter_Name>
+    <Brief description of parameter input required. Repeat this attribute if required>
+
+.INPUTS
+  <Inputs if any, otherwise state None>
+
+.OUTPUTS
+  <Outputs if any, otherwise state None - example: Log file stored in C:\Windows\Temp\<name>.log>
+
+.NOTES
+  Version:        1.0
+  Author:         <Name>
+  Creation Date:  <Date>
+  Purpose/Change: Initial script development
+  
+.EXAMPLE
+  <Example goes here. Repeat this attribute for more than one example>
+#>
+
+#---------------------------------------------------------[Initialisations]--------------------------------------------------------
+
+#Set Error Action to Silently Continue
+$ErrorActionPreference = "SilentlyContinue"
+
+#Dot Source required Function Libraries
+. "C:\Scripts\Functions\Logging_Functions.ps1"
+
+#----------------------------------------------------------[Declarations]----------------------------------------------------------
+
+#Script Version
+$sScriptVersion = "1.0"
+
+#Log File Info
+$sLogPath = "C:\Windows\Temp"
+$sLogName = "<script_name>.log"
+$sLogFile = Join-Path -Path $sLogPath -ChildPath $sLogName
+
+#-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+<#
+
+Function <FunctionName>{
+  Param()
+  
+  Begin{
+    Log-Write -LogPath $sLogFile -LineValue "<description of what is going on>..."
+  }
+  
+  Process{
+    Try{
+
+#Open Up the Workbook#
+$excel = new-object -comobject Excel.Application
+$excel.visible = $false  
+$workbook = 
+$excel.workbooks.open("c:\Users\Jack\documents\NUID_Status_Report.xlsx") 
+$worksheet = $workbook.Worksheets.Item(1)
+
+$rows = $worksheet.range("A1").currentregion.rows.count
+
+### Set up a filter ###
+$headerRange = $worksheet.Range("a4","aj4")
+$headerRange.AutoFilter() | Out-Null
+
+#### Trims Password Expiration Date Name ###
+
+$worksheet.range("AH4").formula = "Shortened Expiration Date"
+[void]$worksheet.Cells.Item(1,1).select()
+$excel.visible = $true
+
+#### Trims Password Expiration Date Formula ###
+
+$worksheet.range("AH5:AH$rows").formula = "=LEFT(AB4,FIND(" ",AB5)-1"
+[void]$worksheet.Cells.Item(1,1).select()
+$excel.visible = $true
+
+# Fix {
+# Quotes within a quoted string need to be doubled-up.
+# $worksheet.range("AH5:AH$rows").formula = "=LEFT(AB4,FIND("" "",AB5)-1)"
+# 'you can also get rid of the inside quotes with the CHAR function
+# $worksheet.range("AH5:AH$rows").formula = "=LEFT(AB4, FIND(CHAR(32), AB5)-1)"
+# }
+# ASCII character 32 is a space. I've also added a bracket to make a legal formula.
+
+    }
+    
+    Catch{
+      Log-Error -LogPath $sLogFile -ErrorDesc $_.Exception -ExitGracefully $True
+      Break
+    }
+  }
+  
+  End{
+    If($?){
+      Log-Write -LogPath $sLogFile -LineValue "Completed Successfully."
+      Log-Write -LogPath $sLogFile -LineValue " "
+    }
+  }
+}
+
+#>
+
+#-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#Log-Start -LogPath $sLogPath -LogName $sLogName -ScriptVersion $sScriptVersion
+#Script Execution goes here
+#Log-Finish -LogPath $sLogFile
